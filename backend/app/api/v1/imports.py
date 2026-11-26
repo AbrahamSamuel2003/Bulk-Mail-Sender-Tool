@@ -50,6 +50,7 @@ async def commit_import(
     campaign_id: uuid.UUID,
     file: UploadFile = File(...),
     column_mapping: str = Form(...),
+    default_subject: str | None = Form(None),
     db: Session = Depends(get_db),
 ) -> dict:
     """Validate mapped rows and insert valid leads + initial draft email_records."""
@@ -62,8 +63,11 @@ async def commit_import(
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Invalid column_mapping JSON.") from exc
 
-    required_keys = {"practice_name", "email", "subject", "body"}
-    missing_keys = [k for k in required_keys if not mapping.get(k)]
+    clean_default_subject = (default_subject or "").strip()
+    required_keys = {"practice_name", "email", "body"}
+    if not clean_default_subject:
+        required_keys.add("subject")
+    missing_keys = [k for k in sorted(required_keys) if not mapping.get(k)]
     if missing_keys:
         raise HTTPException(
             status_code=400,
@@ -89,6 +93,7 @@ async def commit_import(
         column_mapping=mapping,
         existing_campaign_emails=existing_emails,
         suppressed_emails=suppressed_emails,
+        default_subject=clean_default_subject,
     )
 
     for row in valid_rows:

@@ -76,10 +76,11 @@ def validate_and_map_rows(
     column_mapping: dict[str, str],
     existing_campaign_emails: set[str],
     suppressed_emails: set[str],
+    default_subject: str = "",
 ) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
     """
     Validate mapped spreadsheet rows with technical checks only:
-    - Missing required fields (practice_name, email, subject, body)
+    - Missing required fields (practice_name, email, subject/default_subject, body)
     - Basic email format
     - Duplicate emails (in-file or already in campaign)
     - Global suppression list check
@@ -98,7 +99,13 @@ def validate_and_map_rows(
         practice_name = _clean_cell(row.get(practice_col, ""))
         contact_name = _clean_cell(row.get(contact_col, "")) if contact_col else ""
         email = _clean_cell(row.get(email_col, "")).lower()
-        subject = _clean_cell(row.get(subject_col, ""))
+        subject = _clean_cell(row.get(subject_col, "")) if subject_col else ""
+        if not subject and default_subject:
+            subject = (
+                default_subject.replace("{{practice_name}}", practice_name)
+                .replace("{{contact_name}}", contact_name or practice_name)
+                .strip()
+            )
         body = _clean_cell(row.get(body_col, ""))
 
         errors: list[str] = []
