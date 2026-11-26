@@ -12,8 +12,6 @@ interface AppSettingsState {
   delay_between_emails_sec: number;
   delay_between_batches_sec: number;
   daily_sending_limit: number;
-  sending_window_start: string;
-  sending_window_end: string;
   default_timezone: string;
   ai_prompt_config: {
     provider?: string;
@@ -341,35 +339,6 @@ export default function SettingsPage() {
                 value={settings.daily_sending_limit}
                 onChange={(e) =>
                   setSettings({ ...settings, daily_sending_limit: Number(e.target.value) })
-                }
-                className="w-full rounded border border-[#8A8886] px-3 py-1.5 text-xs text-[#323130] focus:border-[#0078D4] focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#323130] mb-1">
-                Sending Window Start (HH:MM)
-              </label>
-              <input
-                type="text"
-                value={settings.sending_window_start}
-                onChange={(e) =>
-                  setSettings({ ...settings, sending_window_start: e.target.value })
-                }
-                className="w-full rounded border border-[#8A8886] px-3 py-1.5 text-xs text-[#323130] focus:border-[#0078D4] focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[#323130] mb-1">
-                Sending Window End (HH:MM)
-              </label>
-              <input
-                type="text"
-                value={settings.sending_window_end}
-                onChange={(e) =>
-                  setSettings({ ...settings, sending_window_end: e.target.value })
                 }
                 className="w-full rounded border border-[#8A8886] px-3 py-1.5 text-xs text-[#323130] focus:border-[#0078D4] focus:outline-none"
               />

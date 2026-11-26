@@ -10,7 +10,6 @@ interface QueueStatus {
   pending_jobs: number;
   sent_today: number;
   daily_sending_limit: number;
-  within_sending_window: boolean;
   ai_quota_exhausted?: boolean;
 }
 

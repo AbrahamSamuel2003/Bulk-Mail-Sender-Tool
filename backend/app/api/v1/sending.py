@@ -8,7 +8,6 @@ from app.models.email_record import EmailRecord
 from app.models.enums import JobStatus, SendStatus
 from app.models.sending import SendingJob
 from app.models.settings import ApplicationSettings
-from app.services.queue_service import is_within_sending_window
 from app.services.scheduling_service import get_campaign_day_bounds_utc, get_campaign_today
 
 router = APIRouter(prefix="/sending", tags=["Sending Queue"])
@@ -45,9 +44,6 @@ def get_queue_status(db: Session = Depends(get_db)) -> dict:
         db.scalar(select(func.count(SendingJob.id)).where(SendingJob.status == JobStatus.PENDING))
         or 0
     )
-    within_window = is_within_sending_window(
-        now_utc, s.sending_window_start, s.sending_window_end, s.default_timezone
-    )
 
     cfg = s.ai_prompt_config or {}
     return {
@@ -55,8 +51,7 @@ def get_queue_status(db: Session = Depends(get_db)) -> dict:
         "pending_jobs": pending_jobs,
         "sent_today": sent_today,
         "daily_sending_limit": s.daily_sending_limit,
-        "within_sending_window": within_window,
-        "sending_window": f"{s.sending_window_start} - {s.sending_window_end} ({s.default_timezone})",
+        "within_sending_window": True,
         "ai_quota_exhausted": bool(cfg.get("ai_quota_exhausted", False)),
         "ai_quota_error": cfg.get("ai_quota_error"),
     }

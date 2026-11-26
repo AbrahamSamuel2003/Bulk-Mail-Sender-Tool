@@ -11,7 +11,6 @@ from app.models.sending import SendingEvent, SendingJob
 from app.models.settings import ApplicationSettings
 from app.models.suppression import SuppressionList
 from app.services.gmail_service import send_email_message
-from app.services.queue_service import is_within_sending_window
 from app.services.scheduling_service import (
     calculate_followup_due_date,
     get_campaign_day_bounds_utc,
@@ -140,7 +139,7 @@ def send_single_email_task(job_id_str: str) -> dict:
 
 
 def dispatch_due_jobs() -> dict:
-    """Periodic dispatcher enforcing global pause, sending window, and daily sending limit."""
+    """Periodic dispatcher enforcing global pause and daily sending limit (date-based, 24/7)."""
     db = SessionLocal()
     dispatched = 0
     try:
@@ -149,11 +148,7 @@ def dispatch_due_jobs() -> dict:
             return {"status": "paused", "dispatched": 0}
 
         now = datetime.now(timezone.utc)
-        tz_name = app_settings.default_timezone if app_settings else "America/New_York"
-        if app_settings and not is_within_sending_window(
-            now, app_settings.sending_window_start, app_settings.sending_window_end, tz_name
-        ):
-            return {"status": "outside_sending_window", "dispatched": 0}
+        tz_name = app_settings.default_timezone if app_settings else "Asia/Kolkata"
 
         daily_limit = app_settings.daily_sending_limit if app_settings else 100
         today = get_campaign_today(tz_name, now)
