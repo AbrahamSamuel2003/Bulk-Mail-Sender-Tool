@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  --fluent-blue: #0078d4;
+  --fluent-blue-hover: #106ebe;
+  --fluent-blue-pressed: #005a9e;
+  --fluent-canvas: #faf9f8;
+  --fluent-nav: #f3f2f1;
+  --fluent-surface: #ffffff;
+  --fluent-border: #edebe9;
+  --fluent-text: #323130;
+  --fluent-text-secondary: #605e5c;
+}
+
+body {
+  background-color: var(--fluent-canvas);
+  color: var(--fluent-text);
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+}
