@@ -1,15 +1,17 @@
 from datetime import datetime, timezone
+import json
 import uuid
 from sqlalchemy import func, select
 
 from app.core.database import SessionLocal
 from app.models.campaign import Campaign
 from app.models.email_record import EmailRecord
-from app.models.enums import CampaignStatus, EmailStage, JobStatus, LeadStage, LeadStatus, SendStatus
+from app.models.enums import CampaignStatus, EmailStage, JobStatus, LeadStage, LeadStatus, SendStatus, SuppressionReason
 from app.models.lead import Lead
 from app.models.sending import SendingEvent, SendingJob
 from app.models.settings import ApplicationSettings
 from app.models.suppression import SuppressionList
+from app.services.dns_service import verify_email_domain_dns
 from app.services.gmail_service import send_email_message
 from app.services.scheduling_service import (
     calculate_followup_due_date,
@@ -73,6 +75,10 @@ def send_single_email_task(job_id_str: str) -> dict:
             if initial_rec and initial_rec.provider_thread_id:
                 thread_id = initial_rec.provider_thread_id
 
+        dns_ok, dns_msg = verify_email_domain_dns(lead.email)
+        if not dns_ok:
+            raise ValueError(dns_msg)
+
         job.attempt_count += 1
         result = send_email_message(
             db=db,
@@ -131,6 +137,52 @@ def send_single_email_task(job_id_str: str) -> dict:
             record = db.get(EmailRecord, job.email_record_id)
             if record and record.send_status != SendStatus.SENT:
                 record.send_status = SendStatus.FAILED
+
+            lead = db.get(Lead, record.lead_id) if record else None
+            campaign = db.get(Campaign, record.campaign_id) if record else None
+            if lead:
+                lead.status = LeadStatus.BOUNCED
+                pending_ids = db.scalars(
+                    select(EmailRecord.id).where(EmailRecord.lead_id == lead.id)
+                ).all()
+                if pending_ids:
+                    for pending_job in db.scalars(
+                        select(SendingJob).where(
+                            SendingJob.email_record_id.in_(pending_ids),
+                            SendingJob.status == JobStatus.PENDING,
+                        )
+                    ).all():
+                        pending_job.status = JobStatus.CANCELLED
+
+                details_payload = json.dumps(
+                    {
+                        "error": err_str,
+                        "practice_name": lead.practice_name,
+                        "contact_name": lead.contact_name,
+                        "campaign_id": str(campaign.id) if campaign else None,
+                        "campaign_name": campaign.name if campaign else None,
+                        "stage": record.stage.value if record else None,
+                        "subject": record.subject if record else None,
+                        "body": record.body if record else None,
+                    },
+                    ensure_ascii=False,
+                )
+                normalized_email = lead.email.strip().lower()
+                existing_supp = db.execute(
+                    select(SuppressionList).where(SuppressionList.email == normalized_email)
+                ).scalar_one_or_none()
+                if existing_supp:
+                    existing_supp.reason = SuppressionReason.BOUNCED
+                    existing_supp.notes = details_payload
+                else:
+                    db.add(
+                        SuppressionList(
+                            email=normalized_email,
+                            reason=SuppressionReason.BOUNCED,
+                            notes=details_payload,
+                        )
+                    )
+
             db.add(SendingEvent(sending_job_id=job.id, event_type="failed", detail=err_str))
             db.commit()
         return {"status": "failed", "error": err_str}

@@ -16,7 +16,7 @@ class ApplicationSettings(Base):
     fu3_interval_days: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
     use_business_days: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     batch_size: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
-    delay_between_emails_sec: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
+    delay_between_emails_sec: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
     delay_between_batches_sec: Mapped[int] = mapped_column(Integer, nullable=False, default=300)
     daily_sending_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     sending_window_start: Mapped[str] = mapped_column(String(5), nullable=False, default="09:00")

@@ -28,7 +28,7 @@ class LocalScheduler:
         if self._tasks:
             return
         self._tasks = [
-            asyncio.create_task(_run_periodic("dispatch_due_jobs", 15, dispatch_due_jobs)),
+            asyncio.create_task(_run_periodic("dispatch_due_jobs", 5, dispatch_due_jobs)),
             asyncio.create_task(_run_periodic("poll_gmail_inbox", 120, poll_gmail_inbox)),
         ]
 

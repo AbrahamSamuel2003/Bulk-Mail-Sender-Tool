@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.email_record import EmailRecord
-from app.models.enums import JobStatus, SendStatus
+from app.models.enums import JobStatus, SendStatus, SuppressionReason
 from app.models.sending import SendingJob
 from app.models.settings import ApplicationSettings
+from app.models.suppression import SuppressionList
 from app.services.scheduling_service import get_campaign_day_bounds_utc, get_campaign_today
 
 router = APIRouter(prefix="/sending", tags=["Sending Queue"])
@@ -44,6 +45,14 @@ def get_queue_status(db: Session = Depends(get_db)) -> dict:
         db.scalar(select(func.count(SendingJob.id)).where(SendingJob.status == JobStatus.PENDING))
         or 0
     )
+    bounced_suppressed_count = (
+        db.scalar(
+            select(func.count(SuppressionList.id)).where(
+                SuppressionList.reason == SuppressionReason.BOUNCED
+            )
+        )
+        or 0
+    )
 
     cfg = s.ai_prompt_config or {}
     return {
@@ -52,6 +61,7 @@ def get_queue_status(db: Session = Depends(get_db)) -> dict:
         "sent_today": sent_today,
         "daily_sending_limit": s.daily_sending_limit,
         "within_sending_window": True,
+        "bounced_suppressed_count": bounced_suppressed_count,
         "ai_quota_exhausted": bool(cfg.get("ai_quota_exhausted", False)),
         "ai_quota_error": cfg.get("ai_quota_error"),
     }

@@ -10,6 +10,7 @@ interface QueueStatus {
   pending_jobs: number;
   sent_today: number;
   daily_sending_limit: number;
+  bounced_suppressed_count?: number;
   ai_quota_exhausted?: boolean;
 }
 
@@ -53,6 +54,20 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        {(status?.bounced_suppressed_count ?? 0) > 0 && (
+          <Link
+            href="/suppressed"
+            className="inline-flex items-center gap-1 rounded-sm bg-[#FFF4CE] px-2 py-0.5 text-[11px] font-semibold text-[#835B00] hover:bg-[#FFE9A6]"
+            title="View failed/bounced emails moved to Suppressed for manual sending"
+          >
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">
+              {status?.bounced_suppressed_count} Failed → Suppressed
+            </span>
+            <span className="sm:hidden">{status?.bounced_suppressed_count} Failed</span>
+          </Link>
+        )}
+
         {status?.ai_quota_exhausted && (
           <Link
             href="/settings"

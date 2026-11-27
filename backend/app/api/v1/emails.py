@@ -445,7 +445,7 @@ def enqueue_campaign_emails(
             continue
 
         batch_index = queued_count // max(1, batch_size)
-        jitter = random.randint(2, 10) if queued_count > 0 else 0
+        jitter = random.randint(0, 5) if queued_count > 0 else 0
         offset_seconds = (queued_count * delay_email_sec) + (batch_index * delay_batch_sec) + jitter
         scheduled_at = now + timedelta(seconds=offset_seconds)
 

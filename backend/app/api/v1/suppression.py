@@ -1,3 +1,4 @@
+import json
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -17,6 +18,28 @@ class SuppressionCreate(BaseModel):
     notes: str | None = None
 
 
+def _serialize_suppression(r: SuppressionList) -> dict:
+    details: dict | None = None
+    display_notes = r.notes
+    if r.notes and r.notes.lstrip().startswith("{"):
+        try:
+            parsed = json.loads(r.notes)
+            if isinstance(parsed, dict):
+                details = parsed
+                display_notes = parsed.get("error") or r.notes
+        except json.JSONDecodeError:
+            pass
+
+    return {
+        "id": str(r.id),
+        "email": r.email,
+        "reason": r.reason.value,
+        "notes": display_notes,
+        "details": details,
+        "created_at": r.created_at.isoformat() if r.created_at else None,
+    }
+
+
 @router.get("")
 def list_suppressed(
     search: str | None = Query(default=None),
@@ -26,16 +49,7 @@ def list_suppressed(
     if search:
         stmt = stmt.where(SuppressionList.email.ilike(f"%{search.strip()}%"))
     rows = db.scalars(stmt.order_by(SuppressionList.created_at.desc())).all()
-    return [
-        {
-            "id": str(r.id),
-            "email": r.email,
-            "reason": r.reason.value,
-            "notes": r.notes,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
-        }
-        for r in rows
-    ]
+    return [_serialize_suppression(r) for r in rows]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
