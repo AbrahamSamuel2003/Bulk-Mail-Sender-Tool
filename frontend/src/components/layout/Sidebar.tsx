@@ -39,32 +39,11 @@ export function Sidebar({
   function renderNavLinks(isCompact: boolean) {
     return (
       <nav className="flex-1 overflow-y-auto py-3">
-        <div
-          className={`flex items-center pb-1.5 ${
-            isCompact ? "justify-center px-2" : "justify-between px-4"
-          }`}
-        >
-          {!isCompact && (
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#605E5C]">
-              Workspace
-            </p>
-          )}
-          {onToggleCollapse && (
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              title={isCompact ? "Open side menu" : "Close side menu"}
-              aria-label={isCompact ? "Open side menu" : "Close side menu"}
-              className="hidden h-6 w-6 items-center justify-center rounded border border-[#EDEBE9] bg-white text-[#605E5C] shadow-2xs transition-colors hover:border-[#8A8886] hover:bg-[#FAF9F8] hover:text-[#323130] lg:inline-flex"
-            >
-              {isCompact ? (
-                <ChevronRight className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronLeft className="h-3.5 w-3.5" />
-              )}
-            </button>
-          )}
-        </div>
+        {!isCompact && (
+          <p className="px-4 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#605E5C]">
+            Workspace
+          </p>
+        )}
 
         <div className="space-y-0.5">
           {globalNav.map((item) => {
@@ -104,13 +83,28 @@ export function Sidebar({
 
   return (
     <>
-      {/* Desktop docked rail (collapsible with clean arrow) */}
+      {/* Desktop docked rail (collapsible with clean arrow on right border) */}
       <aside
-        className={`hidden shrink-0 flex-col border-r border-[#EDEBE9] bg-[#F3F2F1] transition-all duration-200 lg:flex ${
+        className={`relative hidden shrink-0 flex-col border-r border-[#EDEBE9] bg-[#F3F2F1] transition-all duration-200 lg:flex ${
           collapsed ? "w-14" : "w-56"
         }`}
       >
         {renderNavLinks(collapsed)}
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            title={collapsed ? "Open side menu (Esc)" : "Close side menu (Esc)"}
+            aria-label={collapsed ? "Open side menu" : "Close side menu"}
+            className="absolute -right-3 top-1/2 z-20 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-[#EDEBE9] bg-white text-[#605E5C] shadow-sm transition-colors hover:border-[#0078D4] hover:text-[#0078D4]"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronLeft className="h-3.5 w-3.5" />
+            )}
+          </button>
+        )}
       </aside>
 
       {/* Mobile slide-over drawer */}
