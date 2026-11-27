@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Ban,
+  ChevronLeft,
+  ChevronRight,
   FolderKanban,
   History,
   LayoutDashboard,
@@ -24,52 +26,91 @@ const globalNav = [
 export function Sidebar({
   isOpen = false,
   onClose,
+  collapsed = false,
+  onToggleCollapse,
 }: {
   isOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }) {
   const pathname = usePathname();
 
-  const navContent = (
-    <nav className="flex-1 overflow-y-auto py-3">
-      <p className="px-4 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#605E5C]">
-        Workspace
-      </p>
-      <div className="space-y-0.5">
-        {globalNav.map((item) => {
-          const Icon = item.icon;
-          const active =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => onClose?.()}
-              className={`relative flex items-center gap-3 px-4 py-2.5 text-[13px] transition-colors lg:py-2 ${
-                active
-                  ? "bg-white font-semibold text-[#0078D4]"
-                  : "font-normal text-[#323130] hover:bg-[#E1DFDD]"
-              }`}
+  function renderNavLinks(isCompact: boolean) {
+    return (
+      <nav className="flex-1 overflow-y-auto py-3">
+        <div
+          className={`flex items-center pb-1.5 ${
+            isCompact ? "justify-center px-2" : "justify-between px-4"
+          }`}
+        >
+          {!isCompact && (
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#605E5C]">
+              Workspace
+            </p>
+          )}
+          {onToggleCollapse && (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              title={isCompact ? "Open side menu" : "Close side menu"}
+              aria-label={isCompact ? "Open side menu" : "Close side menu"}
+              className="hidden h-6 w-6 items-center justify-center rounded border border-[#EDEBE9] bg-white text-[#605E5C] shadow-2xs transition-colors hover:border-[#8A8886] hover:bg-[#FAF9F8] hover:text-[#323130] lg:inline-flex"
             >
-              {active && (
-                <span className="absolute left-0 top-1 bottom-1 w-[3px] bg-[#0078D4]" />
+              {isCompact ? (
+                <ChevronRight className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronLeft className="h-3.5 w-3.5" />
               )}
-              <Icon className={`h-4 w-4 ${active ? "text-[#0078D4]" : "text-[#605E5C]"}`} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
-  );
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-0.5">
+          {globalNav.map((item) => {
+            const Icon = item.icon;
+            const active =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={isCompact ? item.label : undefined}
+                onClick={() => onClose?.()}
+                className={`relative flex items-center py-2.5 text-[13px] transition-colors lg:py-2 ${
+                  isCompact ? "justify-center px-2" : "gap-3 px-4"
+                } ${
+                  active
+                    ? "bg-white font-semibold text-[#0078D4]"
+                    : "font-normal text-[#323130] hover:bg-[#E1DFDD]"
+                }`}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1 bottom-1 w-[3px] bg-[#0078D4]" />
+                )}
+                <Icon
+                  className={`h-4 w-4 shrink-0 ${active ? "text-[#0078D4]" : "text-[#605E5C]"}`}
+                />
+                {!isCompact && <span className="truncate">{item.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <>
-      {/* Desktop docked rail */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-[#EDEBE9] bg-[#F3F2F1] lg:flex">
-        {navContent}
+      {/* Desktop docked rail (collapsible with clean arrow) */}
+      <aside
+        className={`hidden shrink-0 flex-col border-r border-[#EDEBE9] bg-[#F3F2F1] transition-all duration-200 lg:flex ${
+          collapsed ? "w-14" : "w-56"
+        }`}
+      >
+        {renderNavLinks(collapsed)}
       </aside>
 
       {/* Mobile slide-over drawer */}
@@ -96,7 +137,7 @@ export function Sidebar({
             <X className="h-4 w-4" />
           </button>
         </div>
-        {navContent}
+        {renderNavLinks(false)}
       </aside>
     </>
   );
